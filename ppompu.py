@@ -26,6 +26,10 @@ class HtmlParser(object):
         except:
             pass
         try:
+            ret = text.decode('cp949')
+        except:
+            pass
+        try:
             ret = text.decode('utf-8')
         except:
             pass
@@ -57,7 +61,11 @@ class HtmlParser(object):
             item = dict(arg=self.base_url + link,
                         valid=True,
                         title=title,
-                        subtitle=u'{timestamp}  댓글: {comment}, 추천: {like}, 조회: {view}'.format(timestamp=timestamp, comment=comment, like=like, view=view))
+                        subtitle=u'{timestamp}  댓글: {comment}, 추천: {like}, 조회: {view}'.format(timestamp=timestamp, comment=comment, like=like, view=view),
+                        modifier_subtitles={
+                            u'cmd': u'주소를 클립보드에 저장합니다.'
+                        }
+                        )
             items.append(item)
         return items
 
