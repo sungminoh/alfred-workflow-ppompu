@@ -9,10 +9,10 @@ import sys
 
 
 class HtmlParser(object):
-    def __init__(self, **kargs):
-        self.base_url = kargs.get('base_url', '')
-        self.url = kargs.get('url', '')
-        self.pattern = kargs.get('pattern', '')
+    def __init__(self, **kwargs):
+        self.base_url = kwargs.get('base_url', '')
+        self.url = kwargs.get('url', '')
+        self.pattern = kwargs.get('pattern', '')
 
     """
     decoding is not necessary if default encoding is euc-kr
@@ -56,10 +56,29 @@ class HtmlParser(object):
         regex = re.compile(self.pattern)
         find_pairs = regex.findall(html_page)
         decoded_pairs = HtmlParser.decode_rec(find_pairs)
+        return decoded_pairs
+
+
+class PpomppuParser(HtmlParser):
+    def __init__(self, **kwargs):
+        super(PpomppuParser, self).__init__(**kwargs)
+        self.img_pattern = r'''<img.*?src\s*=\s*["'](.+?)["'].*?>'''
+
+    def parse_title(self, title):
+        match = re.search(self.img_pattern, title)
+        if match:
+            icon = match.groups()[0].rsplit('/', 1)[-1]
+            title = re.sub(self.img_pattern, '', title)
+            return icon, title
+        return 'icon.png', title
+
+    def get_items(self):
         items = []
-        for link, title, comment, timestamp, like, view in decoded_pairs:
+        for link, title, comment, timestamp, like, view in self.findall():
+            icon, title = self.parse_title(title)
             item = dict(arg=self.base_url + link,
                         valid=True,
+                        icon=icon,
                         title=title,
                         subtitle=u'{timestamp}  댓글: {comment}, 추천: {like}, 조회: {view}'.format(timestamp=timestamp, comment=comment, like=like, view=view),
                         modifier_subtitles={
@@ -84,10 +103,10 @@ def main(wf):
     argument_parser.add_argument('--page', '-p', help='page number', nargs='*', required=False)
     args = argument_parser.parse_args()
     args.page.insert(0, '1')
-    html_parser = HtmlParser(base_url='http://www.ppomppu.co.kr/zboard/',
-                             url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu&page=%s' % args.page[-1],
-                             pattern=r"""<a.*?href\s*=\s*["'](.+?)["'].*?>.*?<font.*?class\s*=\s*list_title.*?>(.+?)</font>.*?onclick\s*=\s*'win_comment.*?'>(.*?)</span>[^.]*?title\s*=\s*["'](.+?)["'].*?>.*?colspan=2>(.*?)</td>.*?colspan=2>(.*?)</td>""")
-    for item in html_parser.findall():
+    ppompu_parser = PpomppuParser(base_url='http://www.ppomppu.co.kr/zboard/',
+                                url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu&page=%s' % args.page[-1],
+                                pattern=r"""<a.*?href\s*=\s*["'](.+?)["'].*?>.*?<font.*?class\s*=\s*list_title.*?>(.+?)</font>.*?onclick\s*=\s*'win_comment.*?'>(.*?)</span>[^.]*?title\s*=\s*["'](.+?)["'].*?>.*?colspan=2>(.*?)</td>.*?colspan=2>(.*?)</td>""")
+    for item in ppompu_parser.get_items():
         wf.add_item(**item)
     wf.send_feedback()
 
