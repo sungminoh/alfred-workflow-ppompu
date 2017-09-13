@@ -101,10 +101,11 @@ def main(wf):
     """
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('--page', '-p', help='page number', nargs='*', required=False)
+    argument_parser.add_argument('--type', '-t', help='board type', required=False, type=int)
     args = argument_parser.parse_args()
     args.page.insert(0, '1')
     ppompu_parser = PpomppuParser(base_url='http://www.ppomppu.co.kr/zboard/',
-                                url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu&page=%s' % args.page[-1],
+                                url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu%s&page=%s' % (args.type or '', args.page[-1]),
                                 pattern=r"""<a.*?href\s*=\s*["'](.+?)["'].*?>.*?<font.*?class\s*=\s*list_title.*?>(.+?)</font>.*?onclick\s*=\s*'win_comment.*?'>(.*?)</span>[^.]*?title\s*=\s*["'](.+?)["'].*?>.*?colspan=2>(.*?)</td>.*?colspan=2>(.*?)</td>""")
     for item in ppompu_parser.get_items():
         wf.add_item(**item)
