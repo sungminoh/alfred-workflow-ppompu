@@ -62,20 +62,16 @@ class HtmlParser(object):
 class PpomppuParser(HtmlParser):
     def __init__(self, **kwargs):
         super(PpomppuParser, self).__init__(**kwargs)
-        self.img_pattern = r'''<img.*?src\s*=\s*["'](.+?)["'].*?>'''
-
-    def parse_title(self, title):
-        match = re.search(self.img_pattern, title)
-        if match:
-            icon = match.groups()[0].rsplit('/', 1)[-1]
-            title = re.sub(self.img_pattern, '', title)
-            return icon, title
-        return 'icon.png', title
 
     def get_items(self):
         items = []
-        for link, title, comment, timestamp, like, view in self.findall():
-            icon, title = self.parse_title(title)
+        for tup in self.findall():
+            icon = 'icon.png'
+            if len(tup) > 6:
+                _, icon, link, title, comment, timestamp, like, view = tup
+                icon = icon.rsplit('/', 1)[-1]
+            else:
+                link, title, comment, timestamp, like, view = tup
             item = dict(arg=self.base_url + link,
                         valid=True,
                         icon=icon,
@@ -105,8 +101,8 @@ def main(wf):
     args = argument_parser.parse_args()
     args.page.insert(0, '1')
     ppompu_parser = PpomppuParser(base_url='http://www.ppomppu.co.kr/zboard/',
-                                url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu%s&page=%s' % (args.type or '', args.page[-1]),
-                                pattern=r"""<a.*?href\s*=\s*["'](.+?)["'].*?>.*?<font.*?class\s*=\s*list_title.*?>(.+?)</font>.*?onclick\s*=\s*'win_comment.*?'>(.*?)</span>[^.]*?title\s*=\s*["'](.+?)["'].*?>.*?colspan=2>(.*?)</td>.*?colspan=2>(.*?)</td>""")
+                                  url='http://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu%s&page=%s' % (args.type or '', args.page[-1]),
+                                  pattern=r"""(<img.*?src\s*=\s*["'](.+?)["'].*?>)?\s*<a.*?href\s*=\s*["'](.+?)["'].*?>.*?<font.*?class\s*=\s*list_title.*?>(.+?)</font>.*?onclick\s*=\s*'win_comment.*?'>(.*?)</span>[^.]*?title\s*=\s*["'](.+?)["'].*?>.*?colspan=2>(.*?)</td>.*?colspan=2>(.*?)</td>""")
     for item in ppompu_parser.get_items():
         wf.add_item(**item)
     wf.send_feedback()
