@@ -23,15 +23,15 @@ class HtmlParser(object):
         ret = text
         try:
             ret = text.decode('euc-kr')
-        except:
+        except Exception:
             pass
         try:
             ret = text.decode('cp949')
-        except:
+        except Exception:
             pass
         try:
             ret = text.decode('utf-8')
-        except:
+        except Exception:
             pass
         return ret
 
